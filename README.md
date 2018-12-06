@@ -4,9 +4,13 @@ Bashlib is intended to be one sourceable bash file which includes several common
 
 ## Installation
 
-Bashlib can be installed by running:
+Bashlib can be installed by running the included makefile:
 
     make install
+
+or by installing from [bpkg](https://github.com/bpkg/bpkg):
+
+    bpkg install radarrelay/bashlib -g
 
 ## Uninstalling
 
