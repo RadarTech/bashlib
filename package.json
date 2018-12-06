@@ -1,0 +1,9 @@
+{
+  "name": "bashlib",
+  "version": "0.0.1",
+  "description": "Bash scripting functions that can be reused.",
+  "scripts": [
+    "bashlib"
+  ],
+  "install": "make install"
+}

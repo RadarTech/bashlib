@@ -1,0 +1,223 @@
+BASHLIB_RES_MAJ_VERSION="0"
+BASHLIB_RES_MIN_VERSION="1"
+BASHLIB_RES_PATCH_VERSION="0"
+
+# Sets the supplied variable or echos 1 if there are untracked files, 0 if no untracked files present
+# usage:
+# untracked myvar
+# untracked
+untracked() {
+    if [ $(git status | grep "Untracked files" | wc -l) -eq 1 ]
+    then
+        eval result=1
+    else
+        eval result=0
+    fi
+    local  __resultvar=$1
+    if [[ "$__resultvar" ]]; then
+        eval $__resultvar="'$result'"
+    else
+        echo "$result"
+    fi
+}
+
+
+# Sets the supplied variable or echos 1 if there are uncommited changes, 0 if there are no uncommited changes
+# usage:
+# gitclean myvar
+# gitclean
+gitclean() {
+    git diff-index --quiet HEAD --
+    if [ $? -ne 0 ]
+    then
+        eval result=1
+    else
+        eval result=0
+    fi
+    local  __resultvar=$1
+    if [[ "$__resultvar" ]]; then
+        eval $__resultvar="'$result'"
+    else
+        echo "$result"
+    fi
+}
+
+# Sets the supplied variable or echos 1 if the supplied command is present, 0
+# if the not present
+# usage: 
+# executablepresent "go" gopresent
+# executablepresent "go"
+executablepresent() {
+    if hash $1 2>/dev/null
+    then
+        eval result=1
+    else
+        eval result=0
+    fi
+    local  __resultvar=$2
+    if [[ "$__resultvar" ]]; then
+        eval $__resultvar="'$result'"
+    else
+        echo "$result"
+    fi
+}
+
+# Exits when the supplied argument is not "1" in the context of command availablity checking, second argument should
+# be a user interpretable name for the command
+# usage:
+# requireone $MYAPPPRESENT "myapp"
+requireone () {
+    if [[ $1 != "1" ]]
+    then
+        echo "$2 is not present and is required. Exiting."
+        exit 100
+    fi
+}
+
+# Exits when the supplied command is not available.
+# usage
+# requirecmd "gcloud"
+requirecmd () {
+    if hash $1 2>/dev/null
+    then
+        eval result=1
+    else
+        echo "Command $1 is not found. Exiting"
+        exit 101
+    fi
+}
+
+pushd () {
+    command pushd "$@" > /dev/null
+}
+
+popd () {
+    command popd "$@" > /dev/null
+}
+
+confirmorabort () {
+    confirmandstore "$1" confirm
+    if [[ "$confirm" != "y" ]]
+    then
+        echo "Aborting then..."
+        exit 0
+    fi
+}
+
+# Prompts the user to confirm or deny the first prompt and stores the result as
+# 'y' if the user answered in the afirmative or 'n' if the user answered in the
+# negative in the second argument
+# usage:
+# confirmandstore "Should this happen" SHOULDIT
+confirmandstore () {
+    confirm="n"
+    read -r -s -p "$1 (y/n)[n]" -n 1 confirm
+    echo ""
+    local  __resultvar=$2
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]
+    then
+        eval $__resultvar="y"
+    else
+        eval $__resultvar="n"
+    fi
+}
+
+# Prompts the user using the first argument and stores the response in the second argument
+promptandstore () {
+    read -r -p "$1" $2
+}
+
+# Prompts the user using the first argument and stores the response in the second argument but does not echo
+promptandstoresecret () {
+    read -s -r -p "$1" $2
+}
+
+# Prompts the user using the first argument and stores a single character response in the second argument
+singlepromptandstore () {
+    read -r -s -p "$1 " -n 1 $2
+}
+
+# Prompts the user to chose from a list of options and stores the selection in the second variable.
+# The first argument should be a string with options that contain single characters for the user to choose
+# eg: "Do you have [p]aper, pl[a]stic or [r]eusable bags today?"
+# The second argument should be the variable to store the result in
+# The third argument should be a string containing all the options laid out in the string
+# For the above ex the string would be "par"
+# usage:
+# choosefrom "Do you have [p]aper, pl[a]stic or [r]eusable bags today?" BAGTYPE "par"
+choosefrom () {
+    local __resultvar=''
+    read -r -s -p "$1 " -n 1 __resultvar
+    echo ""
+    if [[ "$3" == *"$__resultvar"* ]]
+    then
+        eval $2=$__resultvar
+    else
+        echo "$__resultvar is not a valid option, try again..."
+        choosefrom "$1" $2 "$3"
+    fi
+}
+
+# Set the value of one variable in the provided configuration file
+# usage:
+# subconfig "Var1" "newval" "/path/to/file" # Updates the variable Var1 to value newval in the provided file
+subconfig () {
+    isint "$2" ISINT
+    new_val="$2"
+    if [[ $ISINT != "1" ]]
+    then
+        # Value is a string so it will need to be written to config in quotation marks
+        new_val="\"$2\""
+    fi
+    sed_param=s%$1=.*%$1=$new_val%  
+    if [[ "$OSTYPE" == "darwin"* ]]
+    then
+        # Mac sed has a slightly different in place flag
+        sed -i '.bak' "$sed_param" $3
+    else
+        sed --in-place='.bak' "$sed_param" $3
+    fi
+}
+
+# Checks if the variable supplied contains characters that represent an integer and emits 1
+# if true, 0 if false
+# If a second variable is supplied, it is set to 1/0 else 1/0 is echoed.
+# usage:
+# isint "256" ISINT
+# isint "256"
+isint () {
+    re='^[0-9]+$'
+    if [[ $1 =~ $re ]]
+    then
+        eval result=1
+    else
+        eval result=0
+    fi
+    local  __resultvar=$2
+    if [[ "$__resultvar" ]]; then
+        eval $__resultvar="'$result'"
+    else
+        echo "$result"
+    fi
+}
+
+
+if [[ ${BASH_SOURCE[0]} != $0 ]]; then
+    export -f untracked
+    export -f gitclean
+    export -f requireone
+    export -f requirecmd
+    export -f pushd
+    export -f popd
+    export -f executablepresent
+    export -f subconfig
+    export -f isint
+    export -f singlepromptandstore
+    export -f choosefrom
+    export BASHLIB_RES_MAJ_VERSION
+    export BASHLIB_RES_MIN_VERSION
+    export BASHLIB_RES_PATCH_VERSION
+else
+    echo "bashlib is not intended to be run directly."
+    exit 1
+fi
