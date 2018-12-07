@@ -1,5 +1,5 @@
 BASHLIB_RES_MAJ_VERSION="0"
-BASHLIB_RES_MIN_VERSION="1"
+BASHLIB_RES_MIN_VERSION="2"
 BASHLIB_RES_PATCH_VERSION="0"
 
 # Sets the supplied variable or echos 1 if there are untracked files, 0 if no untracked files present
@@ -201,6 +201,84 @@ isint () {
     fi
 }
 
+# Return or echo the disk mounted at the specified path size in Megabytes (1,048,576 bytes)
+# usage:
+# disksize "/" SIZE_RESULT - Puts the size in the variable SIZE_RESULT
+# disksize "/" - Echos the disk size
+disksize () {
+    if [ "$(uname)" == "Darwin" ];
+    then
+        local _size=$(df -m $1 | egrep -oE "\d+\s+\d+%\s+\d" | egrep -oE "^\d+")
+    elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ];
+    then
+        local _size=$(df --output=avail -BM $1 | egrep -oe "([0-9]+)" --colour=never)
+    fi
+    local __resultvar=$2
+    if [[ "$__resultvar" ]]; then
+        eval $__resultvar="'$_size'"
+    else
+        echo "$_size"
+    fi
+}
+
+# Return or echo the root disk size in Megabytes (1,048,576 bytes)
+# usage:
+# disksize SIZE_RESULT - Puts the size in the variable SIZE_RESULT
+# disksize - Echos the disk size
+rootdisksize () {
+    local _size=$(disksize "/")
+    local __resultvar=$1
+    if [[ "$__resultvar" ]]; then
+        eval $__resultvar="'$_size'"
+    else
+        echo "$_size"
+    fi
+}
+
+
+infoprint() {
+    echo -e "\033[96m$1\033[0m"
+}
+
+stealthprint () {
+    echo -e "\033[90m$1\033[0m"
+}
+
+muteprint () {
+    echo -e "\033[98m$1\033[0m"
+}
+
+errorprint () {
+    echo -e $"\033[91m$1\033[0m"
+}
+
+warnprint () {
+    echo -e "\033[93m$1\033[0m"
+}
+
+passprint () {
+    echo -e "\033[92m$1\033[0m"
+}
+
+successprint () {
+    passprint $1
+}
+
+# Check to see if the previous command succeeded, exiting with code 99 if not. If the environment variable EXFAIL_MSG is set,
+# the value will be echo'd.
+# usage:
+# exfail 
+exfail () {
+    if [ $? -ne 0 ]
+    then
+        if [[ "$EXFAIL_MSG" ]]
+        then
+            errorprint "$EXFAIL_MSG"
+        fi
+        exit 99
+    fi
+}
+
 
 if [[ ${BASH_SOURCE[0]} != $0 ]]; then
     export -f untracked
@@ -214,6 +292,16 @@ if [[ ${BASH_SOURCE[0]} != $0 ]]; then
     export -f isint
     export -f singlepromptandstore
     export -f choosefrom
+    export -f disksize
+    export -f rootdisksize
+    export -f infoprint
+    export -f stealthprint
+    export -f muteprint
+    export -f errorprint
+    export -f warnprint
+    export -f passprint
+    export -f successprint
+    export -f exfail
     export BASHLIB_RES_MAJ_VERSION
     export BASHLIB_RES_MIN_VERSION
     export BASHLIB_RES_PATCH_VERSION
