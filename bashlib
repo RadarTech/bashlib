@@ -261,7 +261,7 @@ passprint () {
 }
 
 successprint () {
-    passprint $1
+    passprint "$1"
 }
 
 # Check to see if the previous command succeeded, exiting with code 99 if not. If the environment variable EXFAIL_MSG is set,
