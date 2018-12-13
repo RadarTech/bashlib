@@ -299,7 +299,7 @@ filecontains () {
     fi
 }
 
-# Check to see if a given file ends in a blank line. Echo's 1 if last line in file is blank, 0 if not blank. Providing
+# Check to see if a given file ends in a blank line. Echoes 1 if last line in file is blank, 0 if not blank. Providing
 # an argument will store the result in the argument.
 # usage:
 # endsinblankline /tmp/myfile
