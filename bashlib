@@ -1,6 +1,6 @@
 BASHLIB_RES_MAJ_VERSION="0"
 BASHLIB_RES_MIN_VERSION="4"
-BASHLIB_RES_PATCH_VERSION="0"
+BASHLIB_RES_PATCH_VERSION="1"
 
 # Sets the supplied variable or echos 1 if there are untracked files, 0 if no untracked files present
 # usage:
@@ -320,6 +320,20 @@ endsinblankline () {
     fi
 }
 
+# Parse ifconfig response to return the current inet IP addresses
+# usage:
+# getips
+# getips IP_ADDRS
+ipaddrs() {
+    local ipAddrs=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
+    local  __resultvar=$1
+    if [[ "$__resultvar" ]]; then
+        eval $__resultvar="'$ipAddrs'"
+    else
+        echo $ipAddrs
+    fi
+}
+
 
 if [[ ${BASH_SOURCE[0]} != $0 ]]; then
     export -f untracked
@@ -345,6 +359,7 @@ if [[ ${BASH_SOURCE[0]} != $0 ]]; then
     export -f exfail
     export -f filecontains
     export -f endsinblankline
+    export -f ipaddrs
     export BASHLIB_RES_MAJ_VERSION
     export BASHLIB_RES_MIN_VERSION
     export BASHLIB_RES_PATCH_VERSION
